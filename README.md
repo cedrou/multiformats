@@ -1,4 +1,4 @@
-# cpp-multiformats
+# multiformats
 An implementation of multiformat in c++. [http://multiformats.io]()
 
 ## uvarint
