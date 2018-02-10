@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\..\multiformats\include\multiformats\common.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\multiformats\include\multiformats\multiaddr.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\multiformats\include\multiformats\multibase.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\multiformats\include\multiformats\multihash.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\multiformats\include\multiformats\uvarint.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{384982d0-675e-4127-8e6c-722c78a56812}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\multiformats">
+      <UniqueIdentifier>{2430aa3c-2e60-49bc-9ba0-26682423ffc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{8be8b4b7-036e-4b0c-8724-a699242fafbf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\multiformats\src\multibase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\multiformats\src\multiaddr.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
