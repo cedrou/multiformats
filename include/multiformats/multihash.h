@@ -182,13 +182,14 @@ namespace multiformats {
         }
 
 
-        hash_t hash() const { return _hash.hash(); }
-        bufferview_t data() const { return _buffer; }
+        auto hash()  const { return _hash.hash(); }
+        auto data()  const { return _buffer; }
+        auto code()  const { return _hash.code(); }
 
         auto empty() const { return _buffer.empty(); }
-        auto size() const { return _buffer.size(); }
+        auto size()  const { return _buffer.size(); }
         auto begin() const { return _buffer.begin(); }
-        auto end() const { return _buffer.end(); }
+        auto end()   const { return _buffer.end(); }
 
     private:
         const details::hashcode_type<_Hash> _hash;
@@ -414,6 +415,9 @@ namespace multiformats {
         size_t       size()   const { return _size; }
         bufferview_t digest() const { return bufferview_t{ _data }.last(_size); }
 
+        bufferview_t data()   const { return _data; }
+
+
     private:
         hash_t _hash;
         size_t _size;
@@ -425,7 +429,7 @@ namespace multiformats {
     multihash to_multihash(digest_buffer<_Hash> digest) {
         auto mh = buffer_t{};
 
-        uvarint::encode(digest.hash(), std::back_inserter(mh));
+        uvarint::encode(digest.code(), std::back_inserter(mh));
         uvarint::encode(digest.size(), std::back_inserter(mh));
         mh.insert(mh.end(), digest.begin(), digest.end());
 

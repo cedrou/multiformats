@@ -35,9 +35,15 @@ namespace multiformats {
         return result;
     }
 
+    //    Buffer comparison
     inline bool operator == (bufferview_t _Left, bufferview_t _Right) {
         return std::equal(_Left.begin(), _Left.end(), _Right.begin(), _Right.end());
     }
+
+    inline bool operator != (bufferview_t _Left, bufferview_t _Right) { 
+        return !(_Left == _Right);
+    }
+
 
     //
     // String and constant view of strings
@@ -61,6 +67,8 @@ namespace multiformats {
         return elems;
     }
 
+    inline string_t operator+(stringview_t _Left, const string_t& _Right) { return (to_string(_Left) + _Right); }
+    inline string_t operator+(const string_t& _Left, stringview_t _Right) { return (_Left + to_string(_Right)); }
 
     // 
     // Conversions

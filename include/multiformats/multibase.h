@@ -363,19 +363,14 @@ namespace multiformats {
 
     // operator+
     template <base_t _Base>
-    std::string operator+(stringview_t _Left, const encoded_string<_Base>& _Right) { return (_Left + _Right.str()); }
+    string_t operator+(stringview_t _Left, const encoded_string<_Base>& _Right) { return (_Left + _Right.str()); }
     template <base_t _Base>
-    std::string operator+(const encoded_string<_Base>& _Left, stringview_t _Right) { return (_Left.str() + _Right); }
+    string_t operator+(const encoded_string<_Base>& _Left, stringview_t _Right) { return (_Left.str() + _Right); }
     
-    //template <base_t _Base>
-    //std::string operator+(stringview_t _Left, const encoded_string<_Base>& _Right) { return (_Left + _Right.str()); }
-    //template <base_t _Base>
-    //std::string operator+(const encoded_string<_Base>& _Left, stringview_t _Right) { return (_Left.str() + _Right); }
-
     template <base_t _Base>
-    std::string operator+(const char* _Left, const encoded_string<_Base>& _Right) { return (_Left + _Right.str()); }
+    string_t operator+(const char* _Left, const encoded_string<_Base>& _Right) { return (_Left + _Right.str()); }
     template <base_t _Base>
-    std::string operator+(const encoded_string<_Base>& _Left, const char* _Right) { return (_Left.str() + _Right); }
+    string_t operator+(const encoded_string<_Base>& _Left, const char* _Right) { return (_Left.str() + _Right); }
 
     // operator==
     template <base_t _BaseLeft, base_t _BaseRight>
@@ -389,9 +384,33 @@ namespace multiformats {
     template <base_t _Base>
     bool operator==(const encoded_string<_Base>& _Left, const std::string& _Right) { return (_Left.str() == _Right); }
 
+    // operator!=
+    template <base_t _BaseLeft, base_t _BaseRight>
+    bool operator!=(const encoded_string<_BaseLeft>& _Left, const encoded_string<_BaseRight>& _Right) { return !(_Left == _Right); }
+    template <base_t _Base>
+    bool operator!=(const std::string& _Left, const encoded_string<_Base>& _Right) { return !(_Left == _Right); }
+    template <base_t _Base>
+    bool operator!=(const encoded_string<_Base>& _Left, const std::string& _Right) { return !(_Left == _Right); }
+
+    // operator<
+    template <base_t _BaseLeft, base_t _BaseRight>
+    bool operator<(const encoded_string<_BaseLeft>& _Left, const encoded_string<_BaseRight>& _Right)
+    {
+        if (_Left.base() < _Right.base()) return true;
+        if (_Left.base() > _Right.base()) return false;
+
+        return (_Left.str() < _Right.str());
+    }
+    template <base_t _Base>
+    bool operator<(const std::string& _Left, const encoded_string<_Base>& _Right) { return (_Left < _Right.str()); }
+    template <base_t _Base>
+    bool operator<(const encoded_string<_Base>& _Left, const std::string& _Right) { return (_Left.str() < _Right); }
+
     //
     template <base_t _Base>
     std::ostream& operator<< (std::ostream& os, const encoded_string<_Base>& _Right) { return os << _Right.str(); }
+
+
 
     //
     // Encode a buffer/string into a _Base encoded_string

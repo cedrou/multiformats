@@ -208,7 +208,7 @@ stringview_t multiformats::details::serialize_dns(stringview_t src, buffer_t& ds
 
     serialize_lenstring(src, dst);
 
-    return src.first(src.end() - last);
+    return src.last(src.end() - last);
 }
 bufferview_t multiformats::details::deserialize_dns(bufferview_t src, string_t& dst)
 {

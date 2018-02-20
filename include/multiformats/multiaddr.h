@@ -260,11 +260,29 @@ namespace details {
         friend class multiaddr;
     };
 
-    // operator==
+    // Comparison operators
     template <addr_t _LeftAddr, addr_t _RightAddr>
     bool operator==(const addr_buffer<_LeftAddr>& _Left, const addr_buffer<_RightAddr>& _Right)
     {
         return (_Left.addr() == _Right.addr()) && (_Left.data() == _Right.data());
+    }
+
+    template <addr_t _LeftAddr, addr_t _RightAddr>
+    bool operator!=(const addr_buffer<_LeftAddr>& _Left, const addr_buffer<_RightAddr>& _Right)
+    {
+        return !(_Left == _Right);
+    }
+    
+    template <addr_t _LeftAddr, addr_t _RightAddr>
+    bool operator<(const addr_buffer<_LeftAddr>& _Left, const addr_buffer<_RightAddr>& _Right) {
+        if (_Left.addr() < _Right.addr()) return true;
+        if (_Left.addr() > _Right.addr()) return false;
+        auto minsize = std::min(_Left.data().size(), _Right.data().size());
+        for (auto i = 0; i < minsize; i++) {
+            if (_Left.data()[i] < _Right.data()[i]) return true;
+            if (_Left.data()[i] > _Right.data()[i]) return false;
+        }
+        return false;
     }
 
 
@@ -383,6 +401,8 @@ namespace details {
         multiaddr decapsulate(addr_t protocol) const
         {
             auto rit = std::find_if(_protocols.rbegin(), _protocols.rend(), [&](auto a) { return a.addr() == protocol; });
+            if (rit == _protocols.rend()) return _protocols;
+
             auto it = rit.base() - 1;
 
             auto protocols = store_t{};
@@ -405,9 +425,17 @@ namespace details {
             return { protocols };
         }
 
+        //
+        inline bool has(addr_t protocol) const 
+        {
+            return std::find_if(_protocols.begin(), _protocols.end(), [&](auto a) { return a.addr() == protocol; }) != _protocols.end();
+        }
+
         // Accessors
-        bool        empty()     const { return _protocols.empty(); }
-        const auto& protocols() const { return _protocols; }
+        bool        empty()              const { return _protocols.empty(); }
+        const auto& protocols()          const { return _protocols; }
+        size_t      size()               const { return _protocols.size(); }
+        const auto& operator[](size_t i) const { return _protocols[i]; }
         
         string_t str() const 
         {
@@ -436,85 +464,201 @@ namespace details {
         std::vector<addr_buffer<>> _protocols;
     };
 
-    //struct invalid_protocol_exception : public std::exception
-    //{
-    //    invalid_protocol_exception(const char* message) : std::exception(message) {}
-    //};
 
-    //struct parsing_error : public std::exception
-    //{};
+    // Comparison operators
+    inline bool operator==(const multiaddr& a, const multiaddr& b) 
+    {
+        return (a.protocols() == b.protocols());
+    }
+    
+    inline bool operator!=(const multiaddr& a, const multiaddr& b) 
+    {
+        return !(a == b);
+    }
+    
+    inline bool operator<(const multiaddr& a, const multiaddr& b) 
+    {
+        auto ap = a.protocols();
+        auto bp = b.protocols();
 
-
-
-    //const _Protocol& find_protocol(code_t code) {
-    //    for (auto& item : _Protocols)
-    //        if (item.code == code)
-    //            return item;
-
-    //    throw invalid_protocol_exception("invalid protocol code");
-    //}
-
-    //const _Protocol& find_protocol(const std::string& name) {
-    //    for (auto& item : _Protocols)
-    //        if (item.name == name)
-    //            return item;
-
-    //    throw invalid_protocol_exception("invalid protocol name");
-    //}
-
-
-    //class multiaddr {
-    //public:
-    //    using store_t = std::vector<byte_t>;
-
-    //    store_t _Store;
-
-    //public:
-    //    multiaddr() {}
-
-    //    multiaddr(gsl::cstring_span<> addr)
-    //    {
-    //        auto first = addr.begin();
-    //        if (addr[0] == '/') first++;
-
-    //        auto last = first;
-
-    //        while (last != addr.end())
-    //        {
-    //            // next token
-    //            last = std::find(first, addr.end(), '/');
-    //            
-    //            auto protoName = std::string(first, last);
-    //            first = last + 1;
-
-    //            auto protocol = find_protocol(protoName); // throws if not found
-    //            uvarint::encode(protocol.code, std::back_inserter(_Store));
-
-    //            if (protocol.len) 
-    //            {
-    //                // next token
-    //                if (last == addr.end()) throw std::invalid_argument("Invalid address format");
-    //                last = std::find(first, addr.end(), '/');
-
-    //                protocol.encode({ first, last }, std::back_inserter(_Store));
-    //                first = last + 1;
-    //            }
-    //        }
-    //    }
-
-    //    //multiaddr(gsl::czstring_span<> addr)
-    //    //{
-
-    //    //}
+        auto minsize = std::min(ap.size(), bp.size());
+        for (auto i = 0; i < minsize; i++) {
+            if (ap[i] < bp[i]) return true;
+            if (bp[i] < ap[i]) return false;
+        }
+        return false;
+    }
 
 
 
-    //    inline bool empty() const { return _Store.empty(); }
-    //};
+    //------------------------------------------------------
+    // multiaddr filtering
+    //------------------------------------------------------
+    // https://github.com/multiformats/js-mafmt/blob/master/src/index.js
 
-    //inline bool operator<(const multiaddr& a, const multiaddr& b) {
-    //    return a._Store < b._Store;
-    //}
+    namespace details {
+
+        using addr_span = gsl::span<const addr_buffer<>>;
+
+        template <addr_t _Addr>
+        class vbase {
+        public:
+            static addr_span partialmatch(addr_span s)
+            {
+                if (s.empty()) return {};
+                if (s[0].addr() != _Addr) return {};
+                return s.last(s.size() - 1);
+            }
+        };
+
+        template <class FirstType, class ... Types>
+        class vand {
+        public:
+            static addr_span partialmatch(addr_span s)
+            {
+                auto a = FirstType::partialmatch(s);
+                if (a.data() == nullptr || sizeof...(Types)==0) return a;
+                return vand<Types...>::partialmatch(a);
+            }
+        };
+        template <class FirstType>
+        class vand<FirstType> {
+        public:
+            static addr_span partialmatch(addr_span s)
+            {
+                return FirstType::partialmatch(s);
+            }
+        };
+
+
+        template <class FirstType, class ...Types>
+        struct vor {
+            static addr_span partialmatch(addr_span s)
+            {
+                auto a = FirstType::partialmatch(s);
+                if (a.data() || sizeof...(Types)==0) return a;
+                return vor<Types...>::partialmatch(s);
+            }
+        };
+        template <class FirstType>
+        struct vor<FirstType> {
+            static addr_span partialmatch(addr_span s)
+            {
+                return FirstType::partialmatch(s);
+            }
+        };
+
+
+        template <class Type>
+        bool match(const multiaddr& ma)
+        {
+            auto out = Type::partialmatch(gsl::make_span(ma.protocols()));
+            return out.data() && out.size() == 0;
+        }
+
+        //
+        using DNS4 = vbase<dns4>;
+        using DNS6 = vbase<dns6>;
+        using _DNS = vor<vbase<dns>, DNS4, DNS6>;
+
+        using IP = vor <vbase<ip4>, vbase<ip6>>;
+        using TCP = vand <IP, vbase<tcp>>;
+        using UDP = vand <IP, vbase<udp>>;
+        using UTP = vand <UDP, vbase<utp>>;
+
+        using DNS = vor <
+            vand <_DNS, vbase<tcp>>,
+            _DNS
+        >;
+
+        using WebSockets = vor <
+            vand <TCP, vbase<ws>>,
+            vand <DNS, vbase<ws>>
+        >;
+
+        using WebSocketsSecure = vor <
+            vand <TCP, vbase<wss>>,
+            vand <DNS, vbase<wss>>
+        >;
+
+        using HTTP = vor <
+            vand <TCP, vbase<http>>,
+            vand <DNS>,
+            vand <DNS, vbase<http>>
+        >;
+
+        using WebRTCStar = vor <
+            vand <WebSockets, vbase<p2p_webrtc_star>, vbase<ipfs>>,
+            vand <WebSocketsSecure, vbase<p2p_webrtc_star>, vbase<ipfs>>
+        >;
+
+        using WebSocketStar = vor <
+            vand <WebSockets, vbase<p2p_websocket_star>, vbase<ipfs>>,
+            vand <WebSocketsSecure, vbase<p2p_websocket_star>, vbase<ipfs>>,
+            vand <WebSockets, vbase<p2p_websocket_star>>,
+            vand <WebSocketsSecure, vbase<p2p_websocket_star>>
+        >;
+
+        using WebRTCDirect = vand <HTTP, vbase<p2p_webrtc_direct>>;
+
+        using Reliable = vor <
+            WebSockets,
+            WebSocketsSecure,
+            HTTP,
+            WebRTCStar,
+            WebRTCDirect,
+            TCP,
+            UTP
+        >;
+
+        using _IPFS = vor <
+            vand <Reliable, vbase<ipfs>>,
+            WebRTCStar,
+            vbase<ipfs>
+        >;
+
+        using _Circuit = vor <
+            vand <_IPFS, vbase<p2p_circuit>, _IPFS>,
+            vand <_IPFS, vbase<p2p_circuit>>,
+            vand <vbase<p2p_circuit>, _IPFS>,
+            vand <Reliable, vbase<p2p_circuit>>,
+            vand <vbase<p2p_circuit>, Reliable>,
+            vbase<p2p_circuit>
+        >;
+
+
+        class CircuitRecursive : public vor <
+            vand <_Circuit, CircuitRecursive>,
+            _Circuit
+        >{};
+
+        using Circuit = CircuitRecursive;
+
+        using IPFS = vor <
+            vand <Circuit, _IPFS, Circuit>,
+            vand <_IPFS, Circuit>,
+            vand <Circuit, _IPFS>,
+            Circuit,
+            _IPFS
+        >;
+    }
+
+    inline bool is_dns4(const multiaddr& ma)            { return details::match<details::DNS4>(ma); }
+    inline bool is_dns6(const multiaddr& ma)            { return details::match<details::DNS6>(ma); }
+    inline bool is_dns(const multiaddr& ma)             { return details::match<details::DNS>(ma); }
+    inline bool is_ip(const multiaddr& ma)              { return details::match<details::IP>(ma); }
+    inline bool is_tcp(const multiaddr& ma)             { return details::match<details::TCP>(ma); }
+    inline bool is_udp(const multiaddr& ma)             { return details::match<details::UDP>(ma); }
+    inline bool is_utp(const multiaddr& ma)             { return details::match<details::UTP>(ma); }
+    inline bool is_http(const multiaddr& ma)            { return details::match<details::HTTP>(ma); }
+    inline bool is_websockets(const multiaddr& ma)      { return details::match<details::WebSockets>(ma); }
+    inline bool is_websocketssecure(const multiaddr& ma){ return details::match<details::WebSocketsSecure>(ma); }
+    inline bool is_websocketsstar(const multiaddr& ma)  { return details::match<details::WebSocketStar>(ma); }
+    inline bool is_webrtcstar(const multiaddr& ma)      { return details::match<details::WebRTCStar>(ma); }
+    inline bool is_webrtcdirect(const multiaddr& ma)    { return details::match<details::WebRTCDirect>(ma); }
+    inline bool is_reliable(const multiaddr& ma)        { return details::match<details::Reliable>(ma); }
+    inline bool is_circuit(const multiaddr& ma)         { return details::match<details::Circuit>(ma); }
+    inline bool is_ipfs(const multiaddr& ma)            { return details::match<details::IPFS>(ma); }
 
 
 }
