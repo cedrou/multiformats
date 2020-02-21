@@ -80,4 +80,6 @@ namespace multiformats {
 
     inline bufferview_t as_buffer(stringview_t s) { return { reinterpret_cast<const byte_t*>(s.data()), gsl::narrow<ptrdiff_t>(s.size()) }; }
     inline stringview_t as_string(bufferview_t b) { return { reinterpret_cast<const char*>(b.data()), b.size() }; }
+    
+    inline string_t to_string(bufferview_t b) { return to_string(as_string(b)); }
 }

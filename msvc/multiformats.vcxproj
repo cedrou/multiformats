@@ -24,10 +24,14 @@
     <ClInclude Include="..\..\multiformats\include\multiformats\multibase.h" />
     <ClInclude Include="..\..\multiformats\include\multiformats\multihash.h" />
     <ClInclude Include="..\..\multiformats\include\multiformats\uvarint.h" />
+    <ClInclude Include="..\include\multiformats\multicodec.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\multiformats\src\multiaddr.cpp" />
     <ClCompile Include="..\..\multiformats\src\multibase.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="multiformat.natvis" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

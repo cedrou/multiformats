@@ -16,6 +16,9 @@
     <ClInclude Include="..\..\multiformats\include\multiformats\uvarint.h">
       <Filter>include\multiformats</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\multiformats\multicodec.h">
+      <Filter>include\multiformats</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -35,5 +38,8 @@
     <ClCompile Include="..\..\multiformats\src\multiaddr.cpp">
       <Filter>src</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="multiformat.natvis" />
   </ItemGroup>
 </Project>
